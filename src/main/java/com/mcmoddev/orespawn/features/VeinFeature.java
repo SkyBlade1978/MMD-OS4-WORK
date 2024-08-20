@@ -44,9 +44,13 @@ public class VeinFeature extends Feature<VeinConfiguration> {
         BlockPos curpos = new BlockPos((int) startX, (int) startY, (int) startZ);
         List<Pair<BlockPos, Integer>> seen = new ArrayList<>();
         while(cn <= length) {
-            while( ns == ls )
-                ns = pRandom.nextInt(1, 6);
-            if (ls > -1) seen.add(Pair.of(invert(curpos, ls), ls));
+            ns = pRandom.nextInt(1, 6);
+            if ( ns == ls )
+                while( ns == ls )
+                    ns = pRandom.nextInt(1, 6);
+
+            if (ls == -1)
+                seen.add(Pair.of(curpos, ns));
             curpos = switch (ns) {
                 case 1 -> curpos.above();
                 case 2 -> curpos.below();
@@ -56,8 +60,9 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                 case 6 -> curpos.south();
                 default -> throw new RuntimeException(String.format(eMess, ns));
             };
-            if (seen.contains(curpos)) cn = length+1; // early exit, we've crossed our previous track
+
             ls = ns;
+            if (seen.contains(Pair.of(curpos, ls))) break; // early exit, we've crossed our previous track
             cn += 1;
         }
         seen.add(Pair.of(curpos, ns));
@@ -65,18 +70,6 @@ public class VeinFeature extends Feature<VeinConfiguration> {
         return false;
     }
 
-    private BlockPos invert(BlockPos pPos, int previous) {
-        return switch (previous) {
-            case 1 -> pPos.below();
-            case 2 -> pPos.above();
-            case 3 -> pPos.west();
-            case 4 -> pPos.east();
-            case 5 -> pPos.south();
-            case 6 -> pPos.north();
-            default -> throw new RuntimeException(String.format(eMess, previous));
-        };
-
-    }
     private void makeNodeAt(WorldGenLevel pLevel, VeinConfiguration pConfig, Pair<BlockPos, Integer> pLoc) {
         // the right side of each loc determines if the node generates vertical or horizontal
         switch(pLoc.getRight()) {
