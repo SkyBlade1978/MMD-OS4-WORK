@@ -21,7 +21,7 @@ public class OreSpawn
     // Define mod id in a common place for everything to reference
     public static final String MODID = "mmdorespawn";
     // Directly reference a slf4j logger
-    private static final Logger LOGGER = LogUtils.getLogger();
+    //private static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Feature<?>> FEATURE = DeferredRegister.create(BuiltInRegistries.FEATURE, MODID);
     public static final DeferredHolder<Feature<?>, Feature<?>> VEIN_FEATURE = FEATURE.register("mmdos4_vein", () -> new VeinFeature());
 
