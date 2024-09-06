@@ -18,7 +18,7 @@ public class VeinConfiguration implements FeatureConfiguration {
 
     public static final Codec<VeinConfiguration> CODEC = RecordCodecBuilder.create(
             (builder) -> builder.group(
-                    Codec.list(TargetBlockState.CODEC).fieldOf("targets").forGetter((config) -> { return config.targetStates; }),
+                    Codec.list(TargetBlockState.CODEC).fieldOf("targets").forGetter((config) -> config.targetStates ),
                     Codec.INT.fieldOf("size").forGetter((config) -> config.size),
                     Codec.INT.fieldOf("max_length").forGetter((config) -> config.maxLength),
                     Codec.INT.fieldOf("min_length").forGetter((config) -> config.minLength),
