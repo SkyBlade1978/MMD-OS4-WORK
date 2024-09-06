@@ -5,7 +5,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
-import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
 
 import java.util.List;
@@ -20,7 +19,7 @@ public class VeinConfiguration implements FeatureConfiguration {
     public static final Codec<VeinConfiguration> CODEC = RecordCodecBuilder.create(
             (builder) -> {
                 return builder.group(
-                        Codec.list(OreConfiguration.TargetBlockState.CODEC).fieldOf("targets").forGetter((config) -> { return config.targetStates; }),
+                        Codec.list(TargetBlockState.CODEC).fieldOf("targets").forGetter((config) -> { return config.targetStates; }),
                         Codec.INT.fieldOf("size").forGetter((config) -> config.size),
                         Codec.INT.fieldOf("max_length").forGetter((config) -> config.maxLength),
                         Codec.INT.fieldOf("min_length").forGetter((config) -> config.minLength),
@@ -38,6 +37,24 @@ public class VeinConfiguration implements FeatureConfiguration {
     };
 
     public VeinConfiguration(RuleTest target, BlockState state, int size, int maxlength, int minlength, float frequency) {
-        this(ImmutableList.of(new OreConfiguration.TargetBlockState(target, state)), size, maxlength, minlength, frequency);
+        this(ImmutableList.of(new TargetBlockState(target, state)), size, maxlength, minlength, frequency);
+    }
+
+
+    public static class TargetBlockState {
+        public static final Codec<VeinConfiguration.TargetBlockState> CODEC = RecordCodecBuilder.create(
+                p_161039_ -> p_161039_.group(
+                                RuleTest.CODEC.fieldOf("target").forGetter(p_161043_ -> p_161043_.target),
+                                BlockState.CODEC.fieldOf("state").forGetter(p_161041_ -> p_161041_.state)
+                        )
+                        .apply(p_161039_, VeinConfiguration.TargetBlockState::new)
+        );
+        public final RuleTest target;
+        public final BlockState state;
+
+        TargetBlockState(RuleTest pRule, BlockState pState) {
+            this.target = pRule;
+            this.state = pState;
+        }
     }
 }
