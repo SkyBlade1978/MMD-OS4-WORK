@@ -18,7 +18,7 @@ import java.util.List;
 public class VeinFeature extends Feature<VeinConfiguration> {
     private static final String eMess = "Value %d out of range (1-6)";
 
-    private VeinFeature() {
+    public VeinFeature() {
         super(VeinConfiguration.CODEC);
     }
 
