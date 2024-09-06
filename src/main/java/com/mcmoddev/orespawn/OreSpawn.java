@@ -2,9 +2,9 @@ package com.mcmoddev.orespawn;
 
 import com.mcmoddev.orespawn.features.VeinFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
-import org.slf4j.Logger;
+//import org.slf4j.Logger;
 
-import com.mojang.logging.LogUtils;
+//import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.bus.api.IEventBus;
