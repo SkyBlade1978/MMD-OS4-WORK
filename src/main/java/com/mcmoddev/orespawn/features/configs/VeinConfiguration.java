@@ -17,15 +17,13 @@ public class VeinConfiguration implements FeatureConfiguration {
     public final float frequency;
 
     public static final Codec<VeinConfiguration> CODEC = RecordCodecBuilder.create(
-            (builder) -> {
-                return builder.group(
-                        Codec.list(TargetBlockState.CODEC).fieldOf("targets").forGetter((config) -> { return config.targetStates; }),
-                        Codec.INT.fieldOf("size").forGetter((config) -> config.size),
-                        Codec.INT.fieldOf("max_length").forGetter((config) -> config.maxLength),
-                        Codec.INT.fieldOf("min_length").forGetter((config) -> config.minLength),
-                        Codec.FLOAT.fieldOf("frequency").forGetter((config) -> config.frequency)
-                ).apply(builder, VeinConfiguration::new);
-            }
+            (builder) -> builder.group(
+                    Codec.list(TargetBlockState.CODEC).fieldOf("targets").forGetter((config) -> { return config.targetStates; }),
+                    Codec.INT.fieldOf("size").forGetter((config) -> config.size),
+                    Codec.INT.fieldOf("max_length").forGetter((config) -> config.maxLength),
+                    Codec.INT.fieldOf("min_length").forGetter((config) -> config.minLength),
+                    Codec.FLOAT.fieldOf("frequency").forGetter((config) -> config.frequency)
+            ).apply(builder, VeinConfiguration::new)
     );
 
     public VeinConfiguration(List<TargetBlockState> targets, int size, int maxlength, int minlength, float frequency) {
@@ -34,7 +32,7 @@ public class VeinConfiguration implements FeatureConfiguration {
         this.maxLength = maxlength;
         this.minLength = minlength;
         this.frequency = frequency;
-    };
+    }
 
     public VeinConfiguration(RuleTest target, BlockState state, int size, int maxlength, int minlength, float frequency) {
         this(ImmutableList.of(new TargetBlockState(target, state)), size, maxlength, minlength, frequency);
