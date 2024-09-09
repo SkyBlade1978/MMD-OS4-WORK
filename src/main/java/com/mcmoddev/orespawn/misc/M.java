@@ -4,7 +4,7 @@ import net.minecraft.util.RandomSource;
 
 public class M {
 
-    public static final double triangularDistribution(double a, double b, double c, RandomSource random) {
+    public static double triangularDistribution(double a, double b, double c, RandomSource random) {
         double base = (c - a) / (b - a);
         double rand = random.nextDouble();
 
@@ -14,7 +14,7 @@ public class M {
             return b - Math.sqrt((1 - rand) * (b - a) * (b - c));
         }
     }
-    public static final int getPoint(int lowerBound, int upperBound, int median, RandomSource random) {
+    public static int getPoint(int lowerBound, int upperBound, int median, RandomSource random) {
         int t = (int)Math.round(triangularDistribution((float)lowerBound, (float)upperBound, (float)median, random));
         return t - median;
     }
