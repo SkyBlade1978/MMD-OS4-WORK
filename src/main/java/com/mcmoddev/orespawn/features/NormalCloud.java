@@ -41,7 +41,6 @@ public class NormalCloud extends Feature<NormalCloudConfiguration> {
                         for (VeinConfiguration.TargetBlockState tgt : conf.targetStates) {
                             if (tgt.target.test(blockstate, rand)) {
                                 section.setBlockState(acc.getX(), acc.getY(), acc.getZ(), tgt.state);
-                                continue;
                             }
                         }
                     }
