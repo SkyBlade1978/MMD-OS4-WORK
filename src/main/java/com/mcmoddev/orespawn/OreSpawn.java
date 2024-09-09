@@ -24,8 +24,8 @@ public class OreSpawn
     // Directly reference a slf4j logger
     //private static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Feature<?>> FEATURE = DeferredRegister.create(BuiltInRegistries.FEATURE, MODID);
-    public static final DeferredHolder<Feature<?>, Feature<?>> VEIN_FEATURE = FEATURE.register("mmdos4_vein", () -> new VeinFeature());
-    public static final DeferredHolder<Feature<?>, Feature<?>> NORMAL_CLOUD_FEATURE = FEATURE.register("mmdos4_normal_cloud", () -> new NormalCloud());
+    public static final DeferredHolder<Feature<?>, Feature<?>> VEIN_FEATURE = FEATURE.register("mmdos4_vein", VeinFeature::new);
+    public static final DeferredHolder<Feature<?>, Feature<?>> NORMAL_CLOUD_FEATURE = FEATURE.register("mmdos4_normal_cloud", NormalCloud::new);
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
