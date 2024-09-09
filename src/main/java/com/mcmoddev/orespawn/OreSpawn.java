@@ -1,5 +1,6 @@
 package com.mcmoddev.orespawn;
 
+import com.mcmoddev.orespawn.features.NormalCloud;
 import com.mcmoddev.orespawn.features.VeinFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
 //import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class OreSpawn
     //private static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Feature<?>> FEATURE = DeferredRegister.create(BuiltInRegistries.FEATURE, MODID);
     public static final DeferredHolder<Feature<?>, Feature<?>> VEIN_FEATURE = FEATURE.register("mmdos4_vein", () -> new VeinFeature());
+    public static final DeferredHolder<Feature<?>, Feature<?>> NORMAL_CLOUD_FEATURE = FEATURE.register("mmdos4_normal_cloud", () -> new NormalCloud());
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
