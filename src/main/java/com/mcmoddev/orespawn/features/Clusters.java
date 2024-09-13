@@ -77,7 +77,7 @@ public class Clusters extends Feature<ClusterConfiguration> {
     protected static final int[] offsetIndexRef = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
     protected static final int[] offsetIndexRef_small = {0, 1, 2, 3, 4, 5, 6, 7};
 
-    private void scramble(int[] target, Random prng) {
+    private void scramble(int[] target, RandomSource prng) {
         for (int i = target.length - 1; i > 0; i--) {
             int n = prng.nextInt(i);
             int temp = target[i];
@@ -100,8 +100,7 @@ public class Clusters extends Feature<ClusterConfiguration> {
             while (count > 0) {
                 BlockPos.MutableBlockPos p = acc;
                 p.move(offs[scrambledLUT[--count]]);
-                BlockState target = conf.targetStates.get(rand.nextInt(conf.targetStates.size())).state;
-                section.setBlockState(p.getX(), p.getY(), p.getZ(), target, true);
+                section.setBlockState(p.getX(), p.getY(), p.getZ(), state, true);
                 count--;
             }
         }
