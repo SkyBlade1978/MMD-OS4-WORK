@@ -25,6 +25,7 @@ public class OreSpawn
     public static final DeferredRegister<Feature<?>> FEATURE = DeferredRegister.create(BuiltInRegistries.FEATURE, MODID);
     public static final DeferredHolder<Feature<?>, Feature<?>> VEIN_FEATURE = FEATURE.register("mmdos4_vein", VeinFeature::new);
     public static final DeferredHolder<Feature<?>, Feature<?>> NORMAL_CLOUD_FEATURE = FEATURE.register("mmdos4_normal_cloud", NormalCloud::new);
+    public static final DeferredHolder<Feature<?>, Feature<?>> CLUSTERS_FEATURE = FEATURE.register("mmdos4_clusters", NormalCloud::new);
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
