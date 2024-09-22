@@ -33,18 +33,11 @@ public class VeinFeature extends Feature<VeinConfiguration> {
         WorldGenLevel worldgenlevel = pContext.level();
         VeinConfiguration veinconfiguration = pContext.config();
 
-        // do we place ?
-        if (randomsource.nextFloat() <= veinconfiguration.frequency / (veinconfiguration.frequency > 1 ? 100 : 1)) {
-            float base = randomsource.nextFloat() * (float) Math.PI;
-            float sizeMod = veinconfiguration.size / 4.0f;
-            double startX = (double) blockpos.getX() * Math.sin(base) * (double) sizeMod;
-            double startY = (blockpos.getY() * randomsource.nextInt(3) - 2);
-            double startZ = (double) blockpos.getX() * Math.sin(base) * (double) sizeMod;
-            int length = randomsource.nextInt(veinconfiguration.minLength, veinconfiguration.maxLength);
-            return doPlacement(worldgenlevel, randomsource, veinconfiguration, startX, startY, startZ, length);
-        }
-
-        return false;
+        double startX = blockpos.getX();
+        double startY = blockpos.getY();
+        double startZ = blockpos.getZ();
+        int length = randomsource.nextInt(veinconfiguration.minLength, veinconfiguration.maxLength);
+        return doPlacement(worldgenlevel, randomsource, veinconfiguration, startX, startY, startZ, length);
     }
 
     private boolean doPlacement(WorldGenLevel pLevel, RandomSource pRandom, VeinConfiguration pConfig, double startX, double startY, double startZ, int length) {
@@ -102,7 +95,11 @@ public class VeinFeature extends Feature<VeinConfiguration> {
     }
 
     private static double getRadiusOfArea(int area) {
-        return Math.sqrt(area / Math.PI);
+        double base = (double)area/Math.PI;
+        double res = Math.sqrt(base);
+        OreSpawn.LOGGER.info("radius of circle with area {} should be swrt({}/Math.PI) -- sqrt({}) == {}",
+                area,area,base,res);
+        return res;
     }
 
     private static Pair<Double, Double> paraCirc(double r, double curT) {
@@ -165,6 +162,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                         accessPos.set(pos.getX(), tl.getRight(), tl.getLeft());
                     }
 
+                    OreSpawn.LOGGER.info("Trying to place at {}", accessPos);
                     if (pLevel.ensureCanWrite(accessPos)) {
                         LevelChunkSection section = bulksectionaccess.getSection(accessPos);
                         if (section != null) {
