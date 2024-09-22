@@ -4,6 +4,7 @@ import com.mcmoddev.orespawn.OreSpawn;
 import com.mcmoddev.orespawn.features.configs.VeinConfiguration;
 import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
@@ -97,8 +98,6 @@ public class VeinFeature extends Feature<VeinConfiguration> {
     private static double getRadiusOfArea(int area) {
         double base = (double)area/Math.PI;
         double res = Math.sqrt(base);
-        OreSpawn.LOGGER.info("radius of circle with area {} should be swrt({}/Math.PI) -- sqrt({}) == {}",
-                area,area,base,res);
         return res;
     }
 
@@ -108,7 +107,6 @@ public class VeinFeature extends Feature<VeinConfiguration> {
 
     private static Pair<Integer, Integer> paraCircCoords(int cx, int cy, double r, double curT) {
         Pair<Double, Double> base = paraCirc(r, curT);
-        OreSpawn.LOGGER.info("Circ Coords, radius {}, center {}x{} at {} radians is {}x{}", r, cx, cy, curT, base.getLeft(), base.getRight());
         return Pair.of((int) (cx + base.getLeft()), (int) (cy + base.getLeft()));
     }
 
@@ -118,8 +116,30 @@ public class VeinFeature extends Feature<VeinConfiguration> {
 
             BlockPos.MutableBlockPos accessPos = pos.mutable();
             OreSpawn.LOGGER.info("VeinFeature starting at {}", accessPos);
-            for (double r = 0; r <= getRadiusOfArea(pConfig.size); r++) {
-                for (double c = 0; c <= Math.PI * 2; c += 0.01) {
+
+            if (pLevel.ensureCanWrite(accessPos)) {
+                LevelChunkSection section = bulksectionaccess.getSection(accessPos);
+                if (section != null) {
+                    int relX = SectionPos.sectionRelative(accessPos.getX());
+                    int relY = SectionPos.sectionRelative(accessPos.getY());
+                    int relZ = SectionPos.sectionRelative(accessPos.getZ());
+                    BlockState blockstate = section.getBlockState(relX, relY, relZ);
+                    if (!placed.contains(Pair.of(accessPos.getX(), accessPos.getZ()))) {
+                        for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
+                            if (tgt.target.test(blockstate, pRandom)) {
+                                placed.add(Pair.of(accessPos.getX(), accessPos.getZ()));
+                                SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
+//                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (double r = 1; r <= getRadiusOfArea(pConfig.size); r++) {
+                double div = Math.pow(r*2+1, 2);
+                double step = Math.TAU / div;
+                for (double c = 0; c <= Math.TAU; c += step) {
                     int left = pos.getX();
                     int right = pos.getZ();
                     Pair<Integer, Integer> tl = paraCircCoords(left, right, r, c);
@@ -127,7 +147,10 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                     if (pLevel.ensureCanWrite(accessPos)) {
                         LevelChunkSection section = bulksectionaccess.getSection(accessPos);
                         if (section != null) {
-                            BlockState blockstate = section.getBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ());
+                            int relX = SectionPos.sectionRelative(accessPos.getX());
+                            int relY = SectionPos.sectionRelative(accessPos.getY());
+                            int relZ = SectionPos.sectionRelative(accessPos.getZ());
+                            BlockState blockstate = section.getBlockState(relX, relY, relZ);
                             if (!placed.contains(tl)) {
                                 for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
                                     if (tgt.target.test(blockstate, pRandom)) {
@@ -151,8 +174,29 @@ public class VeinFeature extends Feature<VeinConfiguration> {
             BlockPos.MutableBlockPos accessPos = pos.mutable();
             OreSpawn.LOGGER.info("VeinFeature starting at {} **{}", accessPos, northSouth);
 
-            for (double r = 0; r <= getRadiusOfArea(pConfig.size); r++) {
-                for (double c = 0; c <= Math.PI * 2; c += 0.01) {
+            if (pLevel.ensureCanWrite(accessPos)) {
+                LevelChunkSection section = bulksectionaccess.getSection(accessPos);
+                if (section != null) {
+                    int relX = SectionPos.sectionRelative(accessPos.getX());
+                    int relY = SectionPos.sectionRelative(accessPos.getY());
+                    int relZ = SectionPos.sectionRelative(accessPos.getZ());
+                    BlockState blockstate = section.getBlockState(relX, relY, relZ);
+                    if (!placed.contains(Pair.of(accessPos.getX(), northSouth?accessPos.getY():accessPos.getZ()))) {
+                        for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
+                            if (tgt.target.test(blockstate, pRandom)) {
+                                placed.add(Pair.of(accessPos.getX(), northSouth?accessPos.getY():accessPos.getZ()));
+                                SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
+//                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (double r = 1; r <= getRadiusOfArea(pConfig.size); r++) {
+                double div = Math.pow(r*2+1, 2);
+                double step = Math.TAU / div;
+                for (double c = 0; c <= Math.TAU; c += step) {
                     int left = pos.getX();
                     int right = northSouth?pos.getY():pos.getZ();
                     Pair<Integer, Integer> tl = paraCircCoords(left, right, r, c);
@@ -162,11 +206,13 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                         accessPos.set(pos.getX(), tl.getRight(), tl.getLeft());
                     }
 
-                    OreSpawn.LOGGER.info("Trying to place at {}", accessPos);
                     if (pLevel.ensureCanWrite(accessPos)) {
                         LevelChunkSection section = bulksectionaccess.getSection(accessPos);
                         if (section != null) {
-                            BlockState blockstate = section.getBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ());
+                            int relX = SectionPos.sectionRelative(accessPos.getX());
+                            int relY = SectionPos.sectionRelative(accessPos.getY());
+                            int relZ = SectionPos.sectionRelative(accessPos.getZ());
+                            BlockState blockstate = section.getBlockState(relX, relY, relZ);
                             if (!placed.contains(tl)) {
                                 for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
                                     if (tgt.target.test(blockstate, pRandom)) {
