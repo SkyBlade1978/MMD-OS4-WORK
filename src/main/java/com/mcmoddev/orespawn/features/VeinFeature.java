@@ -128,6 +128,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                         for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
                             if (tgt.target.test(blockstate, pRandom)) {
                                 placed.add(Pair.of(accessPos.getX(), accessPos.getZ()));
+                                OreSpawn.LOGGER.info("calling SpawnCache.spawnOrCache(pLevel.getLevel(), ... )");
                                 SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
 //                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
                             }

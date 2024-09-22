@@ -1,7 +1,6 @@
 package com.mcmoddev.orespawn.misc;
 
 import com.mcmoddev.orespawn.OreSpawn;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
@@ -21,20 +20,21 @@ public class SpawnCache {
 
     public static void spawnOrCache(ServerLevel lvl, LevelChunkSection section, BlockPos pos, BlockState state) {
         ChunkPos chunkPos = lvl.getChunk(pos).getPos();
-        System.out.println("Chunk at "+chunkPos+" is loaded? "+ lvl.isAreaLoaded(pos, 1) +" (range: 1)");
+        //System.out.println("Chunk at "+chunkPos+" is loaded? "+ lvl.isAreaLoaded(pos, 1) +" (range: 1)");
+        OreSpawn.LOGGER.info("Chunk at {} is loaded? {}", chunkPos, lvl.isAreaLoaded(pos, 1));
         if (lvl.isAreaLoaded(pos, 1)) {
             int relX = SectionPos.sectionRelative(pos.getX());
             int relY = SectionPos.sectionRelative(pos.getY());
             int relZ = SectionPos.sectionRelative(pos.getZ());
             section.setBlockState(relX, relY, relZ, state);
         } else {
-            Map<BlockPos, BlockState> sction = cache.getOrDefault(chunkPos, new ConcurrentHashMap<>());
-            if (sction.containsKey(pos)) {
-                sction.replace(pos, state);
+            Map<BlockPos, BlockState> sector = cache.getOrDefault(chunkPos, new ConcurrentHashMap<>());
+            if (sector.containsKey(pos)) {
+                sector.replace(pos, state);
             } else {
-                sction.put(pos, state);
+                sector.put(pos, state);
             }
-            cache.put(chunkPos, sction);
+            cache.put(chunkPos, sector);
         }
     }
 
