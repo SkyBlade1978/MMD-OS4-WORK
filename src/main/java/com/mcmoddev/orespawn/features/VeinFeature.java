@@ -132,7 +132,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                                 for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
                                     if (tgt.target.test(blockstate, pRandom)) {
                                         placed.add(tl);
-                                        SpawnCache.spawnOrCache((ServerLevel) pLevel, section, accessPos, tgt.state);
+                                        SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
 //                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
                                     }
                                 }
@@ -149,12 +149,12 @@ public class VeinFeature extends Feature<VeinConfiguration> {
         try (BulkSectionAccess bulksectionaccess = new BulkSectionAccess(pLevel)) {
             List<Pair<Integer, Integer>> placed = new LinkedList<>();
             BlockPos.MutableBlockPos accessPos = pos.mutable();
-            OreSpawn.LOGGER.info("VeinFeature starting at {}", accessPos);
+            OreSpawn.LOGGER.info("VeinFeature starting at {} **{}", accessPos, northSouth);
 
             for (double r = 0; r <= getRadiusOfArea(pConfig.size); r++) {
                 for (double c = 0; c <= Math.PI * 2; c += 0.01) {
                     int left = pos.getX();
-                    int right = pos.getZ();
+                    int right = northSouth?pos.getY():pos.getZ();
                     Pair<Integer, Integer> tl = paraCircCoords(left, right, r, c);
                     if (northSouth) {
                         accessPos.set(tl.getLeft(), tl.getRight(), pos.getZ());
@@ -171,7 +171,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                                 for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
                                     if (tgt.target.test(blockstate, pRandom)) {
                                         placed.add(tl);
-                                        SpawnCache.spawnOrCache((ServerLevel)pLevel, section, accessPos, tgt.state);
+                                        SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
 //                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
                                     }
                                 }

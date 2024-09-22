@@ -1,6 +1,7 @@
 package com.mcmoddev.orespawn.misc;
 
 import com.mcmoddev.orespawn.OreSpawn;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -19,7 +20,7 @@ public class SpawnCache {
 
     public static void spawnOrCache(ServerLevel lvl, LevelChunkSection section, BlockPos pos, BlockState state) {
         ChunkPos chunkPos = lvl.getChunk(pos).getPos();
-        OreSpawn.LOGGER.info("Chunk at {} is loaded? {} (range: 1)", chunkPos, lvl.isAreaLoaded(pos, 1));
+        LogUtils.getLogger().info("Chunk at {} is loaded? {} (range: 1)", chunkPos, lvl.isAreaLoaded(pos, 1));
         if (lvl.isAreaLoaded(pos, 1)) {
             section.setBlockState(pos.getX(), pos.getY(), pos.getZ(), state);
         } else {
