@@ -1,7 +1,10 @@
 package com.mcmoddev.orespawn.features;
 
+import com.mcmoddev.orespawn.OreSpawn;
 import com.mcmoddev.orespawn.features.configs.VeinConfiguration;
+import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockState;
@@ -20,6 +23,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
 
     public VeinFeature() {
         super(VeinConfiguration.CODEC);
+        OreSpawn.LOGGER.info("VeinFeature created");
     }
 
     @Override
@@ -44,6 +48,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
     }
 
     private boolean doPlacement(WorldGenLevel pLevel, RandomSource pRandom, VeinConfiguration pConfig, double startX, double startY, double startZ, int length) {
+        OreSpawn.LOGGER.info("VeinFeature called to spawn a vein at {}, {}, {}", startX, startY, startZ);
         int cn = 0;
         int ls = -1;
         int ns = -1;
@@ -129,7 +134,8 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                                 for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
                                     if (tgt.target.test(blockstate, pRandom)) {
                                         placed.add(tl);
-                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
+                                        SpawnCache.spawnOrCache((ServerLevel) pLevel, section, accessPos, tgt.state);
+//                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
                                     }
                                 }
                             }
@@ -165,7 +171,8 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                                 for (VeinConfiguration.TargetBlockState tgt : pConfig.targetStates) {
                                     if (tgt.target.test(blockstate, pRandom)) {
                                         placed.add(tl);
-                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
+                                        SpawnCache.spawnOrCache((ServerLevel)pLevel, section, accessPos, tgt.state);
+//                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
                                     }
                                 }
                             }

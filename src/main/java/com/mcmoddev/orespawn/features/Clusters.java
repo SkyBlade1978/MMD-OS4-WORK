@@ -1,10 +1,13 @@
 package com.mcmoddev.orespawn.features;
 
+import com.mcmoddev.orespawn.OreSpawn;
 import com.mcmoddev.orespawn.features.configs.ClusterConfiguration;
 import com.mcmoddev.orespawn.features.configs.VeinConfiguration;
 import com.mcmoddev.orespawn.misc.M;
+import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.BulkSectionAccess;
@@ -31,6 +34,7 @@ public class Clusters extends Feature<ClusterConfiguration> {
                 int xPlace = M.getPoint(0, conf.spread, r, rand);
                 int yPlace = M.getPoint(minBuild, buildLimit, (buildLimit - Math.abs(minBuild)) / 2, rand);
                 int zPlace = M.getPoint(0, conf.spread, r, rand);
+                OreSpawn.LOGGER.info("Cluster spawning at {}, {}, {}", xPlace, yPlace, zPlace);
 
                 BlockPos.MutableBlockPos acc = p.mutable();
                 acc.offset(xPlace, yPlace, zPlace);
@@ -40,7 +44,7 @@ public class Clusters extends Feature<ClusterConfiguration> {
                         BlockState blockstate = section.getBlockState(acc.getX(), acc.getY(), acc.getZ());
                         for (VeinConfiguration.TargetBlockState tgt : conf.targetStates) {
                             if (tgt.target.test(blockstate, rand)) {
-                                spawnChunk(acc, tgt.state, conf, section, rand);
+                                spawnChunk(acc, tgt.state, conf, section, rand, pContext.level().getLevel());
                             }
                         }
                     }
@@ -85,7 +89,7 @@ public class Clusters extends Feature<ClusterConfiguration> {
             target[n] = temp;
         }
     }
-    private void spawnChunk(BlockPos.MutableBlockPos acc, BlockState state, ClusterConfiguration conf, LevelChunkSection section, RandomSource rand) {
+    private void spawnChunk(BlockPos.MutableBlockPos acc, BlockState state, ClusterConfiguration conf, LevelChunkSection section, RandomSource rand, ServerLevel pLevel) {
         int count = conf.nodeSize;
         int lutType = (count < 8) ? offsetIndexRef_small.length : offsetIndexRef.length;
         int[] lut = (count < 8) ? offsetIndexRef_small : offsetIndexRef;
@@ -100,7 +104,8 @@ public class Clusters extends Feature<ClusterConfiguration> {
             while (count > 0) {
                 BlockPos.MutableBlockPos p = acc;
                 p.move(offs[scrambledLUT[--count]]);
-                section.setBlockState(p.getX(), p.getY(), p.getZ(), state, true);
+                SpawnCache.spawnOrCache(pLevel, section, p, state);
+//                section.setBlockState(p.getX(), p.getY(), p.getZ(), state, true);
                 count--;
             }
         }

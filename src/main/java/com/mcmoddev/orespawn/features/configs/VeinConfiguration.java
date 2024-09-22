@@ -1,6 +1,7 @@
 package com.mcmoddev.orespawn.features.configs;
 
 import com.google.common.collect.ImmutableList;
+import com.mcmoddev.orespawn.OreSpawn;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.world.level.block.state.BlockState;
@@ -36,6 +37,7 @@ public class VeinConfiguration implements FeatureConfiguration {
 
     public VeinConfiguration(RuleTest target, BlockState state, int size, int maxlength, int minlength, float frequency) {
         this(ImmutableList.of(new TargetBlockState(target, state)), size, maxlength, minlength, frequency);
+        OreSpawn.LOGGER.info("Vein of size {} and a length between {} and {} configured", size, minlength, maxlength);
     }
 
 

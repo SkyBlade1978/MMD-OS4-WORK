@@ -1,8 +1,10 @@
 package com.mcmoddev.orespawn.features;
 
+import com.mcmoddev.orespawn.OreSpawn;
 import com.mcmoddev.orespawn.features.configs.NormalCloudConfiguration;
 import com.mcmoddev.orespawn.features.configs.VeinConfiguration;
 import com.mcmoddev.orespawn.misc.M;
+import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
@@ -31,6 +33,7 @@ public class NormalCloud extends Feature<NormalCloudConfiguration> {
                 int xPlace = M.getPoint(0, conf.spread, r, rand);
                 int yPlace = M.getPoint(minBuild, buildLimit, (buildLimit - Math.abs(minBuild)) / 2, rand);
                 int zPlace = M.getPoint(0, conf.spread, r, rand);
+                OreSpawn.LOGGER.info("NormalCloud spawning at {}, {}, {}", xPlace, yPlace, zPlace);
 
                 BlockPos.MutableBlockPos acc = p.mutable();
                 acc.offset(xPlace, yPlace, zPlace);
@@ -40,7 +43,8 @@ public class NormalCloud extends Feature<NormalCloudConfiguration> {
                         BlockState blockstate = section.getBlockState(acc.getX(), acc.getY(), acc.getZ());
                         for (VeinConfiguration.TargetBlockState tgt : conf.targetStates) {
                             if (tgt.target.test(blockstate, rand)) {
-                                section.setBlockState(acc.getX(), acc.getY(), acc.getZ(), tgt.state);
+                                SpawnCache.spawnOrCache(placeContext.level().getLevel(), section, acc, tgt.state);
+                                //section.setBlockState(acc.getX(), acc.getY(), acc.getZ(), tgt.state);
                             }
                         }
                     }

@@ -2,10 +2,12 @@ package com.mcmoddev.orespawn;
 
 import com.mcmoddev.orespawn.features.NormalCloud;
 import com.mcmoddev.orespawn.features.VeinFeature;
+import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.world.level.levelgen.feature.Feature;
-//import org.slf4j.Logger;
+import net.neoforged.neoforge.common.NeoForge;
+import org.slf4j.Logger;
 
-//import com.mojang.logging.LogUtils;
+import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.bus.api.IEventBus;
@@ -21,7 +23,7 @@ public class OreSpawn
     // Define mod id in a common place for everything to reference
     public static final String MODID = "mmdorespawn";
     // Directly reference a slf4j logger
-    //private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Feature<?>> FEATURE = DeferredRegister.create(BuiltInRegistries.FEATURE, MODID);
     public static final DeferredHolder<Feature<?>, Feature<?>> VEIN_FEATURE = FEATURE.register("mmdos4_vein", VeinFeature::new);
     public static final DeferredHolder<Feature<?>, Feature<?>> NORMAL_CLOUD_FEATURE = FEATURE.register("mmdos4_normal_cloud", NormalCloud::new);
@@ -29,8 +31,10 @@ public class OreSpawn
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
-    public OreSpawn(IEventBus modEventBus, ModContainer modContainer)
-    {
+    public OreSpawn(IEventBus modEventBus, ModContainer modContainer) {
         FEATURE.register(modEventBus);
+        NeoForge.EVENT_BUS.register(SpawnCache.class);
     }
+
+    
 }
