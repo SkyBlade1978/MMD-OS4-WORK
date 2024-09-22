@@ -111,6 +111,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
 
     private static Pair<Integer, Integer> paraCircCoords(int cx, int cy, double r, double curT) {
         Pair<Double, Double> base = paraCirc(r, curT);
+        OreSpawn.LOGGER.info("Circ Coords, radius {}, center {}x{} at {} radians is {}x{}", r, cx, cy, curT, base.getLeft(), base.getRight());
         return Pair.of((int) (cx + base.getLeft()), (int) (cy + base.getLeft()));
     }
 
@@ -118,14 +119,14 @@ public class VeinFeature extends Feature<VeinConfiguration> {
         try (BulkSectionAccess bulksectionaccess = new BulkSectionAccess(pLevel)) {
             List<Pair<Integer, Integer>> placed = new LinkedList<>();
 
-            BlockPos.MutableBlockPos accessPos = new BlockPos.MutableBlockPos();
-
+            BlockPos.MutableBlockPos accessPos = pos.mutable();
+            OreSpawn.LOGGER.info("VeinFeature starting at {}", accessPos);
             for (double r = 0; r <= getRadiusOfArea(pConfig.size); r++) {
                 for (double c = 0; c <= Math.PI * 2; c += 0.01) {
                     int left = pos.getX();
                     int right = pos.getZ();
                     Pair<Integer, Integer> tl = paraCircCoords(left, right, r, c);
-                    accessPos.set(pos.getX() + tl.getLeft(), pos.getY(), pos.getZ() + tl.getRight());
+                    accessPos.set(tl.getLeft(), pos.getY(), tl.getRight());
                     if (pLevel.ensureCanWrite(accessPos)) {
                         LevelChunkSection section = bulksectionaccess.getSection(accessPos);
                         if (section != null) {
@@ -150,7 +151,8 @@ public class VeinFeature extends Feature<VeinConfiguration> {
         // northsouth == true, manipulate XY else manipulate ZY
         try (BulkSectionAccess bulksectionaccess = new BulkSectionAccess(pLevel)) {
             List<Pair<Integer, Integer>> placed = new LinkedList<>();
-            BlockPos.MutableBlockPos accessPos = new BlockPos.MutableBlockPos();
+            BlockPos.MutableBlockPos accessPos = pos.mutable();
+            OreSpawn.LOGGER.info("VeinFeature starting at {}", accessPos);
 
             for (double r = 0; r <= getRadiusOfArea(pConfig.size); r++) {
                 for (double c = 0; c <= Math.PI * 2; c += 0.01) {
@@ -158,9 +160,9 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                     int right = pos.getZ();
                     Pair<Integer, Integer> tl = paraCircCoords(left, right, r, c);
                     if (northSouth) {
-                        accessPos.set(pos.getX() + tl.getLeft(), pos.getY() + tl.getRight(), pos.getZ());
+                        accessPos.set(tl.getLeft(), tl.getRight(), pos.getZ());
                     } else {
-                        accessPos.set(pos.getX(), pos.getY() + tl.getRight(), pos.getZ() + tl.getLeft());
+                        accessPos.set(pos.getX(), tl.getRight(), tl.getLeft());
                     }
 
                     if (pLevel.ensureCanWrite(accessPos)) {

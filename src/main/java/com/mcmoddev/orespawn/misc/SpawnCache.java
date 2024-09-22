@@ -1,6 +1,6 @@
 package com.mcmoddev.orespawn.misc;
 
-import com.mojang.logging.LogUtils;
+import com.mcmoddev.orespawn.OreSpawn;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -10,17 +10,16 @@ import net.minecraft.world.level.chunk.BulkSectionAccess;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
-import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SpawnCache {
     private static final Map<ChunkPos, Map<BlockPos, BlockState>> cache = new ConcurrentHashMap<>();
-    private static final Logger LOGGER = LogUtils.getLogger();
 
     public static void spawnOrCache(ServerLevel lvl, LevelChunkSection section, BlockPos pos, BlockState state) {
         ChunkPos chunkPos = lvl.getChunk(pos).getPos();
+        OreSpawn.LOGGER.info("Chunk at {} is loaded? {} (range: 1)", chunkPos, lvl.isAreaLoaded(pos, 1));
         if (lvl.isAreaLoaded(pos, 1)) {
             section.setBlockState(pos.getX(), pos.getY(), pos.getZ(), state);
         } else {
@@ -51,7 +50,7 @@ public class SpawnCache {
             });
             cache.remove(p);
         } catch(Exception e) {
-            LOGGER.error("Exception trying to work data for cached chunk at position {}: {}", p, e.getMessage());
+            OreSpawn.LOGGER.error("Exception trying to work data for cached chunk at position {}: {}", p, e.getMessage());
         }
     }
 }
