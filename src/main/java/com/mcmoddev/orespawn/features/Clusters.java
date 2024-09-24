@@ -6,6 +6,7 @@ import com.mcmoddev.orespawn.features.configs.VeinConfiguration;
 import com.mcmoddev.orespawn.misc.M;
 import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -41,7 +42,10 @@ public class Clusters extends Feature<ClusterConfiguration> {
                 if (pContext.level().ensureCanWrite(p)) {
                     LevelChunkSection section = access.getSection(p);
                     if (section != null) {
-                        BlockState blockstate = section.getBlockState(acc.getX(), acc.getY(), acc.getZ());
+                        int pX = SectionPos.sectionRelative(acc.getX());
+                        int pY = SectionPos.sectionRelative(acc.getY());
+                        int pZ = SectionPos.sectionRelative(acc.getZ());
+                        BlockState blockstate = section.getBlockState(pX, pY, pZ);
                         for (VeinConfiguration.TargetBlockState tgt : conf.targetStates) {
                             if (tgt.target.test(blockstate, rand)) {
                                 spawnChunk(acc, tgt.state, conf, section, rand, pContext.level().getLevel());

@@ -6,6 +6,7 @@ import com.mcmoddev.orespawn.features.configs.VeinConfiguration;
 import com.mcmoddev.orespawn.misc.M;
 import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.BulkSectionAccess;
@@ -40,7 +41,10 @@ public class NormalCloud extends Feature<NormalCloudConfiguration> {
                 if (placeContext.level().ensureCanWrite(p)) {
                     LevelChunkSection section = access.getSection(p);
                     if (section != null) {
-                        BlockState blockstate = section.getBlockState(acc.getX(), acc.getY(), acc.getZ());
+                        int pX = SectionPos.sectionRelative(acc.getX());
+                        int pY = SectionPos.sectionRelative(acc.getY());
+                        int pZ = SectionPos.sectionRelative(acc.getZ());
+                        BlockState blockstate = section.getBlockState(pX, pY, pZ);
                         for (VeinConfiguration.TargetBlockState tgt : conf.targetStates) {
                             if (tgt.target.test(blockstate, rand)) {
                                 SpawnCache.spawnOrCache(placeContext.level().getLevel(), section, acc, tgt.state);
