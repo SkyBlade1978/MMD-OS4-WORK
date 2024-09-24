@@ -26,3 +26,5 @@ replay_pid*
 .gradle/
 .idea/
 build/
+runs
+runs/client runs/data runs/gameTestServer runs/server
