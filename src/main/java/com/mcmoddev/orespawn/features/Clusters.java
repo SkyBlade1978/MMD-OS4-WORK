@@ -1,17 +1,11 @@
 package com.mcmoddev.orespawn.features;
 
-import com.mcmoddev.orespawn.OreSpawn;
 import com.mcmoddev.orespawn.features.configs.ClusterConfiguration;
-import com.mcmoddev.orespawn.features.configs.VeinConfiguration;
 import com.mcmoddev.orespawn.misc.M;
-import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.BulkSectionAccess;
-import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 
@@ -22,59 +16,29 @@ public class Clusters extends Feature<ClusterConfiguration> {
 
     @Override
     public boolean place(FeaturePlaceContext<ClusterConfiguration> ctx) {
-        ClusterConfiguration config = ctx.config();
+        ClusterConfiguration cfg = ctx.config();
+        WorldGenLevel world = (WorldGenLevel)ctx.level();
         RandomSource rand = ctx.random();
-        WorldGenLevel world  = ctx.level();
-        BlockPos origin      = ctx.origin();
+        BlockPos origin = ctx.origin();
 
-        // logging entry
-        OreSpawn.LOGGER.info("--- Clusters start at {}: spread={}, size={} ---",
-            origin, config.spread, config.size);
+        int r = cfg.spread / 2;
+        int count = Math.min(cfg.size, (int)(Math.PI * r * r));
+        int minY = world.getMinBuildHeight(), maxY = world.getMaxBuildHeight();
 
-        int r        = config.spread / 2;
-        int maxCount = (int)Math.round(Math.PI * r * r);
-        int count    = Math.min(config.size, maxCount);
+        for (int i = 0; i < count; i++) {
+            int x = origin.getX() + M.getPoint(0, cfg.spread, r, rand);
+            int z = origin.getZ() + M.getPoint(0, cfg.spread, r, rand);
+            int y = rand.nextInt(maxY - minY) + minY;
+            BlockPos pos = new BlockPos(x, y, z);
 
-        int minY = world.getMinBuildHeight();
-        int maxY = world.getMaxBuildHeight();
-
-        try (BulkSectionAccess access = new BulkSectionAccess(world)) {
-            while (count-- > 0) {
-                int xOff = M.getPoint(0, config.spread, r, rand);
-                int zOff = M.getPoint(0, config.spread, r, rand);
-                int yOff = rand.nextInt(maxY - minY) + minY;
-
-                BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(
-                    origin.getX() + xOff,
-                    yOff,
-                    origin.getZ() + zOff
-                );
-
-                if (!world.ensureCanWrite(pos)) {
-                    continue;
-                }
-
-                LevelChunkSection section = access.getSection(pos);
-                if (section == null) {
-                    continue;
-                }
-
-                int relX = SectionPos.sectionRelative(pos.getX());
-                int relY = SectionPos.sectionRelative(pos.getY());
-                int relZ = SectionPos.sectionRelative(pos.getZ());
-                BlockState current = section.getBlockState(relX, relY, relZ);
-
-                for (VeinConfiguration.TargetBlockState tgt : config.targetStates) {
-                    if (tgt.target.test(current, rand)) {
-                        SpawnCache.spawnOrCache(world, section, pos, tgt.state);
-                    }
+            BlockState existing = world.getBlockState(pos);
+            for (var tgt : cfg.targetStates) {
+                if (tgt.target.test(existing, rand)) {
+                    world.setBlock(pos, tgt.state, 2);
                 }
             }
-        } catch (Exception e) {
-            OreSpawn.LOGGER.error("Exception in Clusters.place:", e);
         }
 
-        OreSpawn.LOGGER.info("--- Clusters end at {} ---", origin);
         return true;
     }
 }

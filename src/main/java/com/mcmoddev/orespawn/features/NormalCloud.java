@@ -1,17 +1,11 @@
 package com.mcmoddev.orespawn.features;
 
-import com.mcmoddev.orespawn.OreSpawn;
 import com.mcmoddev.orespawn.features.configs.NormalCloudConfiguration;
-import com.mcmoddev.orespawn.features.configs.VeinConfiguration;
 import com.mcmoddev.orespawn.misc.M;
-import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.BulkSectionAccess;
-import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 
@@ -25,88 +19,33 @@ public class NormalCloud extends Feature<NormalCloudConfiguration> {
 
     @Override
     public boolean place(FeaturePlaceContext<NormalCloudConfiguration> ctx) {
-        NormalCloudConfiguration config = ctx.config();
+        NormalCloudConfiguration cfg = ctx.config();
+        WorldGenLevel world = (WorldGenLevel)ctx.level();
         RandomSource rand = ctx.random();
-        WorldGenLevel world = ctx.level();
         BlockPos origin = ctx.origin();
 
-        int r = config.spread / 2;
-        int total = Math.min(config.size, (int)(Math.PI * r * r));
-        int maxAttempts = total * 2;
+        int r = cfg.spread / 2;
+        int total = Math.min(cfg.size, (int)(Math.PI * r * r));
+        int minY = world.getMinBuildHeight(), maxY = world.getMaxBuildHeight();
+
+        Set<BlockPos> seen = new HashSet<>();
         int attempts = 0;
+        while (seen.size() < total && attempts++ < total * 2) {
+            int x = origin.getX() + M.getPoint(0, cfg.spread, r, rand);
+            int z = origin.getZ() + M.getPoint(0, cfg.spread, r, rand);
+            int y = rand.nextInt(maxY - minY) + minY;
+            BlockPos pos = new BlockPos(x, y, z);
+            if (!seen.add(pos)) continue;
 
-        OreSpawn.LOGGER.info("[NormalCloud] START at {} spread={} size={} → total={}, maxAttempts={}",
-            origin, config.spread, config.size, total, maxAttempts);
-
-        int minY = world.getMinBuildHeight();
-        int maxY = world.getMaxBuildHeight(); // exclusive
-
-        try (BulkSectionAccess access = new BulkSectionAccess(world)) {
-            Set<BlockPos> processed = new HashSet<>();
-
-            while (total-- > 0 && attempts < maxAttempts) {
-                attempts++;
-//                OreSpawn.LOGGER.debug("[NormalCloud] loop#{} remaining={} attempts={}", 
-//                    (config.size - total), total, attempts);
-
-                int xOff = M.getPoint(0, config.spread, r, rand);
-                int zOff = M.getPoint(0, config.spread, r, rand);
-                int yOff = rand.nextInt(maxY - minY) + minY;
-
-                BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(
-                    origin.getX() + xOff,
-                    yOff,
-                    origin.getZ() + zOff
-                );
-
-                if (processed.contains(pos)) {
-                    //OreSpawn.LOGGER.debug("[NormalCloud] skip duplicate {}", pos);
-                    continue;
+            BlockState existing = world.getBlockState(pos);
+            for (var tgt : cfg.targetStates) {
+                if (tgt.target.test(existing, rand)) {
+                    world.setBlock(pos, tgt.state, 2);
                 }
-                processed.add(pos);
-                //OreSpawn.LOGGER.debug("[NormalCloud] trying {}", pos);
-
-                if (!world.ensureCanWrite(pos)) {
-                    //OreSpawn.LOGGER.debug("[NormalCloud] cannot write {}", pos);
-                    continue;
-                }
-                //OreSpawn.LOGGER.debug("[NormalCloud] canWrite {}", pos);
-
-                LevelChunkSection section = access.getSection(pos);
-                if (section == null) {
-                    //OreSpawn.LOGGER.debug("[NormalCloud] null section at {}", pos);
-                    continue;
-                }
-                //OreSpawn.LOGGER.debug("[NormalCloud] got section at {}", pos);
-
-                int relX = SectionPos.sectionRelative(pos.getX());
-                int relY = SectionPos.sectionRelative(pos.getY());
-                int relZ = SectionPos.sectionRelative(pos.getZ());
-                BlockState current = section.getBlockState(relX, relY, relZ);
-
-                boolean placedOne = false;
-                for (VeinConfiguration.TargetBlockState tgt : config.targetStates) {
-                    if (tgt.target.test(current, rand)) {
-                        placedOne = true;
-                        SpawnCache.spawnOrCache(world, section, pos, tgt.state);
-                       // OreSpawn.LOGGER.debug("[NormalCloud] placed at {}", pos);
-                    }
-                }
-               // if (!placedOne) {
-                    //OreSpawn.LOGGER.debug("[NormalCloud] no match at {}", pos);
-               // }
             }
-
-//            if (attempts >= maxAttempts) {
-//                OreSpawn.LOGGER.warn("[NormalCloud] aborted after too many attempts: {} of {}", attempts, maxAttempts);
-//            } else {
-//                OreSpawn.LOGGER.info("[NormalCloud] completed {} loops in {} attempts", config.size, attempts);
-//            }
-        } catch (Exception e) {
-            OreSpawn.LOGGER.error("[NormalCloud] Exception in placement", e);
         }
 
-        OreSpawn.LOGGER.info("[NormalCloud] END at {}", origin);
         return true;
     }
+
 }
