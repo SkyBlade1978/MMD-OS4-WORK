@@ -3,86 +3,83 @@ package com.mcmoddev.orespawn.misc;
 import com.mcmoddev.orespawn.OreSpawn;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.BulkSectionAccess;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.LinkedHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SpawnCache {
-    // Custom bounded cache using LinkedHashMap
-    private static final int MAX_CACHE_SIZE = 1000;
-    private static final Map<ChunkPos, Map<BlockPos, BlockState>> cache = new LinkedHashMap<>() {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<ChunkPos, Map<BlockPos, BlockState>> eldest) {
-            return size() > MAX_CACHE_SIZE;
-        }
-    };
+	private static final int MAX_CACHE_SIZE = 1000;
 
-    private static final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	// Bounded, thread-safe cache for truly off-chunk writes at runtime:
+	private static final Map<ChunkPos, Map<BlockPos, BlockState>> cache = new LinkedHashMap<>() {
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<ChunkPos, java.util.Map<BlockPos, BlockState>> eldest) {
+			return size() > MAX_CACHE_SIZE;
+		}
+	};
 
-    public static void spawnOrCache(ServerLevel lvl, LevelChunkSection section, BlockPos pos, BlockState state) {
-        OreSpawn.LOGGER.info("In SpawnCache.spawnOrCache({}, {}, {}, {})", lvl, section, pos, state);
-        ChunkPos chunkPos = new ChunkPos(pos);
+	public static void spawnOrCache(LevelAccessor lvl, LevelChunkSection section, BlockPos pos, BlockState state) {
+		int relX = SectionPos.sectionRelative(pos.getX());
+		int relY = SectionPos.sectionRelative(pos.getY());
+		int relZ = SectionPos.sectionRelative(pos.getZ());
 
-        OreSpawn.LOGGER.info("Chunk at {} is loaded? {}", chunkPos, lvl.isAreaLoaded(pos, 1));
-        if (lvl.isAreaLoaded(pos, 1)) {
-            int relX = SectionPos.sectionRelative(pos.getX());
-            int relY = SectionPos.sectionRelative(pos.getY());
-            int relZ = SectionPos.sectionRelative(pos.getZ());
-            section.setBlockState(relX, relY, relZ, state, false);
-        } else {
-            synchronized (cache) {
-                cache.computeIfAbsent(chunkPos, k -> new ConcurrentHashMap<>()).put(pos, state);
-            }
-        }
-    }
+// 1) During world-gen, always write into the section buffer
+		if (lvl instanceof WorldGenLevel) {
+			section.setBlockState(relX, relY, relZ, state, false);
+			return;
+		}
 
-    @SubscribeEvent
-    public static void chunkLoaded(ChunkEvent.Load event) {
-        LevelAccessor lvl = event.getLevel();
-        ChunkPos p = event.getChunk().getPos();
+// 2) At runtime on the server, if the chunk's loaded, write directly
+		if (lvl instanceof ServerLevel server && server.isAreaLoaded(pos, 1)) {
+			section.setBlockState(relX, relY, relZ, state, false);
+			return;
+		}
 
-        Map<BlockPos, BlockState> work;
-        synchronized (cache) {
-            work = cache.remove(p);
-        }
-        if (work == null) return;
+// 3) Otherwise, cache for replay when the chunk actually loads
+		ChunkPos cp = new ChunkPos(pos);
+		synchronized (cache) {
+			cache.computeIfAbsent(cp, k -> new ConcurrentHashMap<>()).put(pos, state);
+		}
+	}
 
-        threadPool.submit(() -> {
-            try (BulkSectionAccess bsa = new BulkSectionAccess(lvl)) {
-                work.entrySet().forEach(bp -> {
-                    BlockPos pos = bp.getKey();
-                    int relX = SectionPos.sectionRelative(pos.getX());
-                    int relY = SectionPos.sectionRelative(pos.getY());
-                    int relZ = SectionPos.sectionRelative(pos.getZ());
-                    BlockState targ = bp.getValue();
-                    LevelChunkSection section = bsa.getSection(pos);
-                    if (section != null) {
-                        section.setBlockState(relX, relY, relZ, targ);
-                    }
-                });
-            } catch (Exception e) {
-                OreSpawn.LOGGER.error("Exception processing cached chunk at position {}: {}", p, e.getMessage());
-            }
-        });
-    }
+	/** Replay any cached writes when a real ServerLevel chunk finally loads. */
+	@SubscribeEvent
+	public static void chunkLoaded(ChunkEvent.Load event) {
+		if (!(event.getLevel() instanceof ServerLevel server))
+			return;
+		ChunkPos pos = event.getChunk().getPos();
 
-    public static void shutdown() {
-        threadPool.shutdown();
-        try {
-            if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-                threadPool.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            threadPool.shutdownNow();
-        }
-    }
+		Map<BlockPos, BlockState> toReplay;
+		synchronized (cache) {
+			toReplay = cache.remove(pos);
+		}
+		if (toReplay == null)
+			return;
+
+		server.getServer().execute(() -> {
+			try (BulkSectionAccess bsa = new BulkSectionAccess(server)) {
+				for (var e : toReplay.entrySet()) {
+					BlockPos bp = e.getKey();
+					BlockState bs = e.getValue();
+					LevelChunkSection sec = bsa.getSection(bp);
+					if (sec != null) {
+						sec.setBlockState(SectionPos.sectionRelative(bp.getX()), SectionPos.sectionRelative(bp.getY()),
+								SectionPos.sectionRelative(bp.getZ()), bs, false);
+					}
+				}
+			} catch (Exception ex) {
+				OreSpawn.LOGGER.error("Error replaying cached spawns for chunk {}: {}", pos, ex.getMessage());
+			}
+		});
+	}
 }
