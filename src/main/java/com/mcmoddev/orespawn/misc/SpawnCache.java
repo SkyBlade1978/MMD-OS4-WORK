@@ -12,11 +12,20 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
 public class SpawnCache {
-    private static final Map<ChunkPos, Map<BlockPos, BlockState>> cache = new ConcurrentHashMap<>();
+    // Custom bounded cache using LinkedHashMap
+    private static final int MAX_CACHE_SIZE = 1000;
+    private static final Map<ChunkPos, Map<BlockPos, BlockState>> cache = new LinkedHashMap<>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<ChunkPos, Map<BlockPos, BlockState>> eldest) {
+            return size() > MAX_CACHE_SIZE;
+        }
+    };
+
     private static final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public static void spawnOrCache(ServerLevel lvl, LevelChunkSection section, BlockPos pos, BlockState state) {
@@ -30,13 +39,9 @@ public class SpawnCache {
             int relZ = SectionPos.sectionRelative(pos.getZ());
             section.setBlockState(relX, relY, relZ, state, false);
         } else {
-            cache.compute(chunkPos, (key, sector) -> {
-                if (sector == null) {
-                    sector = new ConcurrentHashMap<>();
-                }
-                sector.put(pos, state);
-                return sector;
-            });
+            synchronized (cache) {
+                cache.computeIfAbsent(chunkPos, k -> new ConcurrentHashMap<>()).put(pos, state);
+            }
         }
     }
 
@@ -49,7 +54,6 @@ public class SpawnCache {
         synchronized (cache) {
             work = cache.remove(p);
         }
-
         if (work == null) return;
 
         threadPool.submit(() -> {
