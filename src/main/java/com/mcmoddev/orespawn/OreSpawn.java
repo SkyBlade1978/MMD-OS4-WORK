@@ -2,9 +2,7 @@ package com.mcmoddev.orespawn;
 
 import com.mcmoddev.orespawn.features.NormalCloud;
 import com.mcmoddev.orespawn.features.VeinFeature;
-import com.mcmoddev.orespawn.misc.SpawnCache;
 import net.minecraft.world.level.levelgen.feature.Feature;
-import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -33,8 +31,5 @@ public class OreSpawn
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public OreSpawn(IEventBus modEventBus, ModContainer modContainer) {
         FEATURE.register(modEventBus);
-        NeoForge.EVENT_BUS.register(SpawnCache.class);
     }
-
-    
 }
