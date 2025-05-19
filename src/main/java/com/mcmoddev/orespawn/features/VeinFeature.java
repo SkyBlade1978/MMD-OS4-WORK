@@ -70,7 +70,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
         }
         seen.add(Pair.of(curpos, ns));
         seen.forEach(bp -> makeNodeAt(pLevel, pConfig, bp, pRandom));
-        return false;
+        return true;
     }
 
     private void makeNodeAt(WorldGenLevel pLevel, VeinConfiguration pConfig, Pair<BlockPos, Integer> pLoc, RandomSource pRandom) {
@@ -105,10 +105,11 @@ public class VeinFeature extends Feature<VeinConfiguration> {
 
     private static Pair<Integer, Integer> paraCircCoords(int cx, int cy, double r, double curT) {
         Pair<Double, Double> base = paraCirc(r, curT);
-        return Pair.of((int) (cx + base.getLeft()), (int) (cy + base.getLeft()));
+        return Pair.of((int) (cx + base.getLeft()), (int) (cy + base.getRight()));
     }
 
     private void makeHorizontal(WorldGenLevel pLevel, BlockPos pos, VeinConfiguration pConfig, RandomSource pRandom) {
+    	OreSpawn.LOGGER.debug("[Vein] makeHorizontal start at {}  size={}  maxR={}", pos, pConfig.size, getRadiusOfArea(pConfig.size));
         try (BulkSectionAccess bulksectionaccess = new BulkSectionAccess(pLevel)) {
             List<Pair<Integer, Integer>> placed = new LinkedList<>();
 
@@ -129,16 +130,23 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                             OreSpawn.LOGGER.info("Target state: {} ({})-- test: {}", tgt, blockstate, tgt.target.test(blockstate, pRandom));
                             if (tgt.target.test(blockstate, pRandom)) {
                                 placed.add(Pair.of(accessPos.getX(), accessPos.getZ()));
-                                OreSpawn.LOGGER.info("calling setBlock (pLevel.setBlock(...))");
-                                pLevel.setBlock(accessPos, tgt.state, 2);
-                                //SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
-//                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
+                                //OreSpawn.LOGGER.info("calling setBlock (pLevel.setBlock(...))");
+                                //pLevel.setBlock(accessPos, tgt.state, 2);
+                                
+                                int rx = SectionPos.sectionRelative(accessPos.getX());
+                                int ry = SectionPos.sectionRelative(accessPos.getY());
+                                int rz = SectionPos.sectionRelative(accessPos.getZ());
+                                OreSpawn.LOGGER.info("section.setBlockState({}, {}, {}, {}, false)", rx, ry, rz, tgt.state);
+                                section.setBlockState(rx, ry, rz, tgt.state, false);
                             }
                         }
                     }
                 }
             }
-
+            //double maxRadius = Math.min(getRadiusOfArea(pConfig.size), 8); // TODO: make this configurable - added for now for testing
+            //for (double r = 1; r <= maxRadius; r++) { //  maxRadius=getRadiusOfArea(pConfig.size)
+            
+            
             for (double r = 1; r <= getRadiusOfArea(pConfig.size); r++) {
                 double div = Math.pow(r*2+1, 2);
                 double step = Math.TAU / div;
@@ -161,10 +169,14 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                                     OreSpawn.LOGGER.info("Target state: {} ({})-- test: {}", tgt, blockstate, tgt.target.test(blockstate, pRandom));
                                     if (tgt.target.test(blockstate, pRandom)) {
                                         placed.add(tl);
-                                        OreSpawn.LOGGER.info("calling setBlock (pLevel.setBlock(...))");
-                                        pLevel.setBlock(accessPos, tgt.state, 2);
-                                        //SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
-//                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
+                                        //OreSpawn.LOGGER.info("calling setBlock (pLevel.setBlock(...))");
+                                        //pLevel.setBlock(accessPos, tgt.state, 2);
+                                        
+                                        int rx = SectionPos.sectionRelative(accessPos.getX());
+                                        int ry = SectionPos.sectionRelative(accessPos.getY());
+                                        int rz = SectionPos.sectionRelative(accessPos.getZ());
+                                        OreSpawn.LOGGER.info("section.setBlockState({}, {}, {}, {}, false)", rx, ry, rz, tgt.state);
+                                        section.setBlockState(rx, ry, rz, tgt.state, false);
                                     }
                                 }
                             }
@@ -173,9 +185,11 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                 }
             }
         }
+        OreSpawn.LOGGER.debug("[Vein] makeHorizontal done at {}", pos);
     }
 
     private void makeVertical(WorldGenLevel pLevel, BlockPos pos, VeinConfiguration pConfig, RandomSource pRandom, boolean northSouth) {
+    	OreSpawn.LOGGER.debug("[Vein] makeVertical start at {}  size={}  maxR={}", pos, pConfig.size, getRadiusOfArea(pConfig.size));
         // northsouth == true, manipulate XY else manipulate ZY
         try (BulkSectionAccess bulksectionaccess = new BulkSectionAccess(pLevel)) {
             List<Pair<Integer, Integer>> placed = new LinkedList<>();
@@ -196,10 +210,14 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                             OreSpawn.LOGGER.info("Target state: {} ({})-- test: {}", tgt, blockstate, tgt.target.test(blockstate, pRandom));
                             if (tgt.target.test(blockstate, pRandom)) {
                                 placed.add(Pair.of(accessPos.getX(), northSouth?accessPos.getY():accessPos.getZ()));
-                                OreSpawn.LOGGER.info("calling setBlock (pLevel.setBlock(...))");
-                                pLevel.setBlock(accessPos, tgt.state, 2);
-                                //SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
-//                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
+                                //OreSpawn.LOGGER.info("calling setBlock (pLevel.setBlock(...))");
+                                //pLevel.setBlock(accessPos, tgt.state, 2);
+                                
+                                int rx = SectionPos.sectionRelative(accessPos.getX());
+                                int ry = SectionPos.sectionRelative(accessPos.getY());
+                                int rz = SectionPos.sectionRelative(accessPos.getZ());
+                                OreSpawn.LOGGER.info("section.setBlockState({}, {}, {}, {}, false)", rx, ry, rz, tgt.state);
+                                section.setBlockState(rx, ry, rz, tgt.state, false);
                             }
                         }
                     }
@@ -233,10 +251,14 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                                     OreSpawn.LOGGER.info("Target state: {} ({})-- test: {}", tgt, blockstate, tgt.target.test(blockstate, pRandom));
                                     if (tgt.target.test(blockstate, pRandom)) {
                                         placed.add(tl);
-                                        OreSpawn.LOGGER.info("calling setBlock (pLevel.setBlock(...))");
-                                        pLevel.setBlock(accessPos, tgt.state, 2);
-                                        //SpawnCache.spawnOrCache(pLevel.getLevel(), section, accessPos, tgt.state);
-//                                        section.setBlockState(accessPos.getX(), accessPos.getY(), accessPos.getZ(), tgt.state);
+                                        //OreSpawn.LOGGER.info("calling setBlock (pLevel.setBlock(...))");
+                                        //pLevel.setBlock(accessPos, tgt.state, 2);
+                                        
+                                        int rx = SectionPos.sectionRelative(accessPos.getX());
+                                        int ry = SectionPos.sectionRelative(accessPos.getY());
+                                        int rz = SectionPos.sectionRelative(accessPos.getZ());
+                                        OreSpawn.LOGGER.info("section.setBlockState({}, {}, {}, {}, false)", rx, ry, rz, tgt.state);
+                                        section.setBlockState(rx, ry, rz, tgt.state, false);
                                     }
                                 }
                             }
@@ -245,5 +267,7 @@ public class VeinFeature extends Feature<VeinConfiguration> {
                 }
             }
         }
+        
+        OreSpawn.LOGGER.debug("[Vein] makeVertical done at {}", pos);
     }
 }
