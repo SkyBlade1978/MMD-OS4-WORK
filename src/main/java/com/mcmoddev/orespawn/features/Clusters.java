@@ -1,11 +1,15 @@
 package com.mcmoddev.orespawn.features;
 
+import com.mcmoddev.orespawn.OreSpawn;
 import com.mcmoddev.orespawn.features.configs.ClusterConfiguration;
 import com.mcmoddev.orespawn.misc.M;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.BulkSectionAccess;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 
@@ -33,35 +37,44 @@ public class Clusters extends Feature<ClusterConfiguration> {
         WorldGenLevel world = (WorldGenLevel) context.level();
         RandomSource random = context.random();
         BlockPos origin = context.origin();
+        WorldGenLevel worldgenlevel = context.level();
+        
+        try (BulkSectionAccess bulksectionaccess = new BulkSectionAccess(worldgenlevel)) {
+        	 // Compute radius and number of attempts based on config
+            int radius = config.spread / 2;
+            int maxClusters = (int) (Math.PI * radius * radius);
+            int clustersToPlace = Math.min(config.size, maxClusters);
 
-        // Compute radius and number of attempts based on config
-        int radius = config.spread / 2;
-        int maxClusters = (int) (Math.PI * radius * radius);
-        int clustersToPlace = Math.min(config.size, maxClusters);
+            // World height bounds
+            int minBuildY = world.getMinBuildHeight();
+            int maxBuildY = world.getMaxBuildHeight(); // exclusive
 
-        // World height bounds
-        int minBuildY = world.getMinBuildHeight();
-        int maxBuildY = world.getMaxBuildHeight(); // exclusive
+            // Generate each cluster
+            for (int i = 0; i < clustersToPlace; i++) {
+                // Pick a random offset within the circular spread
+                int offsetX = M.getPoint(0, config.spread, radius, random);
+                int offsetZ = M.getPoint(0, config.spread, radius, random);
+                int offsetY = random.nextInt(maxBuildY - minBuildY) + minBuildY;
 
-        // Generate each cluster
-        for (int i = 0; i < clustersToPlace; i++) {
-            // Pick a random offset within the circular spread
-            int offsetX = M.getPoint(0, config.spread, radius, random);
-            int offsetZ = M.getPoint(0, config.spread, radius, random);
-            int offsetY = random.nextInt(maxBuildY - minBuildY) + minBuildY;
+                BlockPos targetPos = new BlockPos(
+                    origin.getX() + offsetX,
+                    offsetY,
+                    origin.getZ() + offsetZ
+                );
 
-            BlockPos targetPos = new BlockPos(
-                origin.getX() + offsetX,
-                offsetY,
-                origin.getZ() + offsetZ
-            );
-
-            // Check existing block and replace if it matches any target state
-            BlockState existingState = world.getBlockState(targetPos);
-            for (var targetState : config.targetStates) {
-                if (targetState.target.test(existingState, random)) {
-                    // Use flag 2: no physics and no neighbor updates for performance
-                    world.setBlock(targetPos, targetState.state, 2);
+                // Check existing block and replace if it matches any target state
+                BlockState existingState = world.getBlockState(targetPos);
+                for (var targetState : config.targetStates) {
+                    if (targetState.target.test(existingState, random)) {                        
+                        BlockPos.MutableBlockPos accessPos = targetPos.mutable();
+                    	LevelChunkSection section = bulksectionaccess.getSection(accessPos);
+                        
+                        int rx = SectionPos.sectionRelative(accessPos.getX());
+                        int ry = SectionPos.sectionRelative(accessPos.getY());
+                        int rz = SectionPos.sectionRelative(accessPos.getZ());
+                        OreSpawn.LOGGER.info("Clusters section.setBlockState({}, {}, {}, {}, false)", rx, ry, rz, targetState.state);
+                        section.setBlockState(rx, ry, rz, targetState.state, false);
+                    }
                 }
             }
         }
